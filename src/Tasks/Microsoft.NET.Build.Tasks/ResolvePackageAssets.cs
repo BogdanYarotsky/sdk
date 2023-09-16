@@ -742,10 +742,11 @@ namespace Microsoft.NET.Build.Tasks
                 }
                 else
                 {
+                    if (_lockFile.IsMissingRuntimeIdentifier(_targetFramework, _task.RuntimeIdentifier))
+                    {
+
+                    }
                     _compileTimeTarget = _lockFile.GetTargetAndThrowIfNotFound(_targetFramework, runtimeIdentifier: null);
-                    // this is the place that causes the crash!
-
-
                     _runtimeTarget = _lockFile.GetTargetAndThrowIfNotFound(_targetFramework, _task.RuntimeIdentifier);
                 }
 

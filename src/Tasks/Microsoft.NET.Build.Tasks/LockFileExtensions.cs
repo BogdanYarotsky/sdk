@@ -10,24 +10,32 @@ namespace Microsoft.NET.Build.Tasks
 {
     internal static class LockFileExtensions
     {
+        public static bool IsMissingRuntimeIdentifier(this LockFile lockFile, string frameworkAlias, string runtimeIdentifier)
+        {
+            var target = lockFile.GetTargetAndReturnNullIfNotFound(frameworkAlias, runtimeIdentifier);
+            return target is null && !string.IsNullOrEmpty(runtimeIdentifier);
+        }
+
+        public static bool AnyTargetFrameworkHasTargetAlias(this LockFile lockFile)
+        {
+            return lockFile.PackageSpec.TargetFrameworks.Any(tfi => !string.IsNullOrEmpty(tfi.TargetAlias));
+        }
+
         public static LockFileTarget? GetTargetAndReturnNullIfNotFound(this LockFile lockFile, string frameworkAlias, string runtimeIdentifier)
         {
             LockFileTarget lockFileTarget = lockFile.GetTarget(frameworkAlias, runtimeIdentifier);
-
-            if (lockFileTarget == null &&
-                lockFile.PackageSpec.TargetFrameworks.All(tfi => string.IsNullOrEmpty(tfi.TargetAlias)))
+            if (lockFileTarget != null || lockFile.AnyTargetFrameworkHasTargetAlias())
             {
-                var nuGetFramework = NuGetUtils.ParseFrameworkName(frameworkAlias);
-                lockFileTarget = lockFile.GetTarget(nuGetFramework, runtimeIdentifier);
+                return lockFileTarget;
             }
 
-            return lockFileTarget;
+            var nuGetFramework = NuGetUtils.ParseFrameworkName(frameworkAlias);
+            return lockFile.GetTarget(nuGetFramework, runtimeIdentifier);
         }
 
         public static LockFileTarget GetTargetAndThrowIfNotFound(this LockFile lockFile, string frameworkAlias, string runtimeIdentifier)
         {
             LockFileTarget lockFileTarget = lockFile.GetTargetAndReturnNullIfNotFound(frameworkAlias, runtimeIdentifier);
-
             if (lockFileTarget != null)
             {
                 return lockFileTarget;
