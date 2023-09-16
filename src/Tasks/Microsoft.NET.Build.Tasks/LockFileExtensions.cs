@@ -1,6 +1,7 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using System.Diagnostics;
 using Microsoft.Build.Framework;
 using NuGet.Packaging.Core;
 using NuGet.ProjectModel;
@@ -9,7 +10,7 @@ namespace Microsoft.NET.Build.Tasks
 {
     internal static class LockFileExtensions
     {
-        public static LockFileTarget GetTargetAndReturnNullIfNotFound(this LockFile lockFile, string frameworkAlias, string runtimeIdentifier)
+        public static LockFileTarget? GetTargetAndReturnNullIfNotFound(this LockFile lockFile, string frameworkAlias, string runtimeIdentifier)
         {
             LockFileTarget lockFileTarget = lockFile.GetTarget(frameworkAlias, runtimeIdentifier);
 
@@ -27,27 +28,20 @@ namespace Microsoft.NET.Build.Tasks
         {
             LockFileTarget lockFileTarget = lockFile.GetTargetAndReturnNullIfNotFound(frameworkAlias, runtimeIdentifier);
 
-            if (lockFileTarget == null)
+            if (lockFileTarget != null)
             {
-                string frameworkString = frameworkAlias;
-                string targetMoniker = string.IsNullOrEmpty(runtimeIdentifier) ?
-                    frameworkString :
-                    $"{frameworkString}/{runtimeIdentifier}";
-
-                string message;
-                if (string.IsNullOrEmpty(runtimeIdentifier))
-                {
-                    message = string.Format(Strings.AssetsFileMissingTarget, lockFile.Path, targetMoniker, frameworkString);
-                }
-                else
-                {
-                    message = string.Format(Strings.AssetsFileMissingRuntimeIdentifier, lockFile.Path, targetMoniker, frameworkString, runtimeIdentifier);
-                }
-
-                throw new BuildErrorException(message);
+                return lockFileTarget;
             }
 
-            return lockFileTarget;
+            if (string.IsNullOrEmpty(runtimeIdentifier))
+            {
+                var missingTargetMessage = string.Format(Strings.AssetsFileMissingTarget, lockFile.Path, frameworkAlias, frameworkAlias);
+                throw new BuildErrorException(missingTargetMessage);
+            }
+
+            var targetMoniker = $"{frameworkAlias}/{runtimeIdentifier}";
+            var missingRidMessage = string.Format(Strings.AssetsFileMissingRuntimeIdentifier, lockFile.Path, targetMoniker, frameworkAlias, runtimeIdentifier);
+            throw new BuildErrorException(missingRidMessage);
         }
 
         public static string GetLockFileTargetAlias(this LockFile lockFile, LockFileTarget lockFileTarget)

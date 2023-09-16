@@ -743,6 +743,9 @@ namespace Microsoft.NET.Build.Tasks
                 else
                 {
                     _compileTimeTarget = _lockFile.GetTargetAndThrowIfNotFound(_targetFramework, runtimeIdentifier: null);
+                    // this is the place that causes the crash!
+
+
                     _runtimeTarget = _lockFile.GetTargetAndThrowIfNotFound(_targetFramework, _task.RuntimeIdentifier);
                 }
 
