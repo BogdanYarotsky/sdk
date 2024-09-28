@@ -9,7 +9,7 @@ namespace Microsoft.NET.Build.Tasks
 {
     internal static class LockFileExtensions
     {
-        public static LockFileTarget GetTargetAndReturnNullIfNotFound(this LockFile lockFile, string frameworkAlias, string runtimeIdentifier)
+        public static LockFileTarget? GetTargetAndReturnNullIfNotFound(this LockFile lockFile, string frameworkAlias, string runtimeIdentifier)
         {
             LockFileTarget lockFileTarget = lockFile.GetTarget(frameworkAlias, runtimeIdentifier);
 
@@ -27,27 +27,18 @@ namespace Microsoft.NET.Build.Tasks
         {
             LockFileTarget lockFileTarget = lockFile.GetTargetAndReturnNullIfNotFound(frameworkAlias, runtimeIdentifier);
 
-            if (lockFileTarget == null)
-            {
-                string frameworkString = frameworkAlias;
-                string targetMoniker = string.IsNullOrEmpty(runtimeIdentifier) ?
-                    frameworkString :
-                    $"{frameworkString}/{runtimeIdentifier}";
+            if (lockFileTarget is not null)
+                return lockFileTarget;
 
-                string message;
-                if (string.IsNullOrEmpty(runtimeIdentifier))
-                {
-                    message = string.Format(Strings.AssetsFileMissingTarget, lockFile.Path, targetMoniker, frameworkString);
-                }
-                else
-                {
-                    message = string.Format(Strings.AssetsFileMissingRuntimeIdentifier, lockFile.Path, targetMoniker, frameworkString, runtimeIdentifier);
-                }
+            string targetMoniker = string.IsNullOrEmpty(runtimeIdentifier)
+                ? frameworkAlias
+                : $"{frameworkAlias}/{runtimeIdentifier}";
 
-                throw new BuildErrorException(message);
-            }
+            string message = string.IsNullOrEmpty(runtimeIdentifier)
+                ? string.Format(Strings.AssetsFileMissingTarget, lockFile.Path, targetMoniker, frameworkAlias)
+                : string.Format(Strings.AssetsFileMissingRuntimeIdentifier, lockFile.Path, targetMoniker, frameworkAlias, runtimeIdentifier);
 
-            return lockFileTarget;
+            throw new BuildErrorException(message);
         }
 
         public static string GetLockFileTargetAlias(this LockFile lockFile, LockFileTarget lockFileTarget)
